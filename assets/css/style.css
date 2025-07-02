@@ -1,0 +1,106 @@
+/* General Body Styling */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f2f5; /* A light grey background */
+    min-height: 100vh; /* Ensures body takes full viewport height */
+    display: flex; /* Flexbox for centering content */
+    flex-direction: column; /* Stacks content vertically */
+    align-items: center; /* Centers content horizontally */
+    justify-content: center; /* Centers content vertically */
+    padding: 20px; /* Padding around the content */
+    margin: 0; /* Remove default body margin */
+}
+
+/* Styling for the Registration Card/Container */
+.registration-card {
+    background-color: #ffffff; /* White background for the card */
+    border-radius: 12px; /* Slightly more rounded corners */
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12); /* Softer, larger shadow */
+    padding: 40px; /* Increased padding inside the card */
+    max-width: 600px; /* Maximum width of the card */
+    width: 100%; /* Ensures it takes full width on smaller screens */
+    box-sizing: border-box; /* Includes padding and border in element's total width and height */
+}
+
+/* Heading inside the card */
+.registration-card h2 {
+    color: #2c3e50; /* Dark blue-grey for heading */
+    font-weight: 700; /* Bolder heading */
+    margin-bottom: 30px; /* More space below heading */
+    text-align: center; /* Center align the heading */
+    font-size: 2.2em; /* Larger font size */
+}
+
+/* Form Labels */
+.form-label {
+    font-weight: 600; /* Bolder labels */
+    color: #4a4a4a; /* Slightly darker grey for labels */
+    margin-bottom: 8px; /* Space below labels */
+}
+
+/* Required field indicator */
+.required-star {
+    color: #e74c3c; /* A distinct red for required indicator */
+    margin-left: 4px; /* Slight margin from label */
+    font-size: 1.1em; /* Slightly larger star */
+}
+
+/* Styling for Bootstrap Buttons (Primary) */
+.btn-primary {
+    background-color: #3498db; /* A vibrant blue for primary button */
+    border-color: #3498db;
+    font-weight: 600; /* Bolder text */
+    padding: 12px 25px; /* Larger padding */
+    border-radius: 8px; /* Rounded button corners */
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease; /* Smooth transition */
+}
+.btn-primary:hover {
+    background-color: #2980b9; /* Darker blue on hover */
+    border-color: #2980b9;
+    transform: translateY(-2px); /* Slight lift effect on hover */
+}
+
+/* Spinner for Loading State */
+.spinner-border {
+    margin-left: 10px;
+}
+
+/* Message Styles (Success and Error) */
+#responseMessage {
+    margin-top: 25px; /* Space above message */
+    padding: 18px; /* Generous padding */
+    border-radius: 8px; /* Rounded corners */
+    font-weight: 500; /* Slightly bolder text */
+    line-height: 1.5; /* Better readability */
+}
+
+.success-message {
+    background-color: #d4edda; /* Light green background */
+    color: #155724; /* Dark green text */
+    border: 1px solid #c3e6cb; /* Green border */
+}
+
+.error-message-alert {
+    background-color: #f8d7da; /* Light red background */
+    color: #721c24; /* Dark red text */
+    border: 1px solid #f5c6cb; /* Red border */
+}
+
+/* Utility Class for Hidden Elements */
+.d-none {
+    display: none !important;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .registration-card {
+        padding: 25px; /* Smaller padding on small screens */
+    }
+    .registration-card h2 {
+        font-size: 1.8em; /* Smaller heading on small screens */
+    }
+    .btn-primary {
+        padding: 10px 20px; /* Smaller button padding */
+        font-size: 0.95em;
+    }
+}

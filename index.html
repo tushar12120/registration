@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Registration</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <link rel="stylesheet" href="assets/css/style.css"> 
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+    <script>
+        // Your Firebase Project Configuration (REPLACE WITH YOUR ACTUAL CONFIG)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCONhYKm2xCMxvAE3GW5Q2yU7WrBkks-YA", 
+            authDomain: "todoroki-340f0.firebaseapp.com",
+            projectId: "todoroki-340f0", 
+            storageBucket: "todoroki-340f0.appspot.com",
+            messagingSenderId: "847595073980",
+            appId: "1:847595073980:web:7dde7498832ada312efbb9",
+            measurementId: "G-0YJ5S8JQYG"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Define total slots
+        const TOTAL_SLOTS = 48; // You can change this if your room size is different
+    </script>
+</head>
+<body>
+    <div class="registration-card">
+        <div class="text-center mb-4">
+            <h4 class="text-muted mb-2">Payment UPI ID:</h4>
+            <h3 class="text-primary fw-bold">8094353411@ybl</h3>
+            <hr>
+        </div>
+
+        <h2 class="mb-3">Player Registration</h2>
+        
+        <div class="alert alert-info text-center mb-4" role="alert">
+            Available Slots: <strong id="availableSlotsDisplay">Loading...</strong> / <span id="totalSlotsDisplay"></span>
+        </div>
+
+        <form id="playerRegistrationForm">
+            <div class="mb-3">
+                <label for="playerName" class="form-label">Player Name (Real Name) <span class="required-star">*</span></label>
+                <input type="text" class="form-control" id="playerName" required>
+            </div>
+            <div class="mb-3">
+                <label for="inGameName" class="form-label">In Game Name <span class="required-star">*</span></label>
+                <input type="text" class="form-control" id="inGameName" required>
+            </div>
+            <div class="mb-3">
+                <label for="gameUID" class="form-label">Free Fire UID <span class="required-star">*</span></label>
+                <input type="text" class="form-control" id="gameUID" required>
+            </div>
+            <div class="mb-3">
+                <label for="idLevel" class="form-label">ID Level <span class="required-star">*</span></label>
+                <input type="number" class="form-control" id="idLevel" required min="1">
+            </div>
+            <div class="mb-3">
+                <label for="mobileNumber" class="form-label">Mobile Number <span class="required-star">*</span></label>
+                <input type="tel" class="form-control" id="mobileNumber" required pattern="[0-9]{10}" title="Please enter a 10-digit mobile number">
+            </div>
+            
+            <div class="mb-3">
+                <label for="paymentStatus" class="form-label">Payment Status <span class="required-star">*</span></label>
+                <select class="form-select" id="paymentStatus" required>
+                    <option value="">Select Status</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Pending">Pending</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="formFiller" class="form-label">Form Filler <span class="required-star">*</span></label>
+                <select class="form-select" id="formFiller" required>
+                    <option value="">Select Filler</option>
+                    <option value="Tushar">Tushar</option>
+                    <option value="Swaroop">Swaroop</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="tournamentName" class="form-label">Tournament Name (Optional)</label>
+                <input type="text" class="form-control" id="tournamentName" placeholder="e.g., MGH Tournament">
+            </div>
+            
+            <div class="d-grid mt-4">
+                <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                    <span id="submitText">Register Player</span>
+                    <span id="submitSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                </button>
+            </div>
+        </form>
+
+        <div id="responseMessage" class="d-none"></div>
+
+        <hr class="my-4">
+
+        <div class="text-center">
+            <a href="view-registrations.html" class="btn btn-info btn-lg">
+                <i class="bi bi-list-columns-reverse me-2"></i> View All Registrations
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        const availableSlotsDisplay = document.getElementById('availableSlotsDisplay');
+        const totalSlotsDisplay = document.getElementById('totalSlotsDisplay');
+        const submitBtn = document.getElementById('submitBtn'); 
+        const submitText = document.getElementById('submitText'); 
+        const responseMessage = document.getElementById('responseMessage'); 
+
+        totalSlotsDisplay.textContent = TOTAL_SLOTS;
+
+        // --- Function to update available slots based on ACTUAL registered players ---
+        async function updateSlotsAndFindNextAvailable() {
+            let nextAvailableSlot = 1; 
+            let actualFilledSlots = 0;
+
+            try {
+                const snapshot = await db.collection('manualRegistrations').orderBy('slotNumber', 'asc').get();
+                actualFilledSlots = snapshot.size;
+
+                if (actualFilledSlots > 0) {
+                    const usedSlotNumbers = new Set();
+                    snapshot.forEach(doc => {
+                        const slot = doc.data().slotNumber;
+                        if (typeof slot === 'number' && slot > 0) {
+                            usedSlotNumbers.add(slot);
+                        }
+                    });
+
+                    for (let i = 1; i <= TOTAL_SLOTS; i++) { 
+                        if (!usedSlotNumbers.has(i)) {
+                            nextAvailableSlot = i;
+                            break; 
+                        }
+                        if (i === TOTAL_SLOTS) { 
+                            nextAvailableSlot = TOTAL_SLOTS + 1; 
+                        }
+                    }
+                }
+                
+                const availableSlotsCount = TOTAL_SLOTS - actualFilledSlots;
+                availableSlotsDisplay.textContent = Math.max(0, availableSlotsCount); 
+                
+                if (availableSlotsCount <= 0) {
+                    submitBtn.disabled = true;
+                    submitText.textContent = "Slots Full";
+                    if (!responseMessage.classList.contains('error-message-alert') || responseMessage.textContent.includes("Slots Full")) {
+                        displayMessage("All slots are currently filled.", 'error');
+                    }
+                } else {
+                    submitBtn.disabled = false;
+                    submitText.textContent = "Register Player";
+                    responseMessage.classList.add('d-none'); 
+                }
+
+                return nextAvailableSlot; 
+
+            } catch (error) {
+                console.error("Error fetching actual registration count or finding next slot:", error);
+                availableSlotsDisplay.textContent = "Error";
+                displayMessage("Error fetching slot data. Please refresh. (Check 'manualRegistrations' read rules)", 'error');
+                return null; 
+            }
+        }
+
+        // --- Live Update Listener for Slots (based on actual registrations collection) ---
+        db.collection('manualRegistrations').onSnapshot(snapshot => {
+            console.log("Manual Registrations collection updated (live listener)");
+            updateSlotsAndFindNextAvailable(); 
+        }, error => {
+            console.error("Error listening to manualRegistrations collection:", error);
+            availableSlotsDisplay.textContent = "Error";
+            displayMessage("Error listening for registration updates. Please refresh. (Check 'manualRegistrations' read rules)", 'error');
+        });
+
+
+        document.getElementById('playerRegistrationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            responseMessage.classList.add('d-none');
+            submitBtn.disabled = true;
+            submitText.textContent = "Registering...";
+            
+            const playerName = document.getElementById('playerName').value.trim();
+            const inGameName = document.getElementById('inGameName').value.trim();
+            const gameUID = document.getElementById('gameUID').value.trim();
+            const idLevel = document.getElementById('idLevel').value.trim();
+            const mobileNumber = document.getElementById('mobileNumber').value.trim();
+            const paymentStatus = document.getElementById('paymentStatus').value;
+            const formFiller = document.getElementById('formFiller').value;
+            const tournamentName = document.getElementById('tournamentName').value.trim();
+
+            if (!playerName || !inGameName || !gameUID || !idLevel || !mobileNumber || !paymentStatus || !formFiller) {
+                displayMessage("Player Name, In Game Name, Free Fire UID, ID Level, Mobile Number, Payment Status, and Form Filler are required.", 'error');
+                resetSubmitButton();
+                return;
+            }
+            if (isNaN(idLevel) || parseInt(idLevel) < 1) {
+                displayMessage("ID Level must be a positive number.", 'error');
+                resetSubmitButton();
+                return;
+            }
+            if (!/^[0-9]{10}$/.test(mobileNumber)) {
+                displayMessage("Please enter a valid 10-digit mobile number.", 'error');
+                resetSubmitButton();
+                return;
+            }
+            
+            submitSpinner.classList.remove('d-none');
+
+            let assignedSlotNumber = null;
+
+            try {
+                // Find the next available slot number
+                assignedSlotNumber = await updateSlotsAndFindNextAvailable(); 
+                
+                if (assignedSlotNumber === null || assignedSlotNumber > TOTAL_SLOTS) {
+                    throw new Error("All slots are already filled. Cannot register more players.");
+                }
+
+                const playerData = {
+                    slotNumber: assignedSlotNumber, 
+                    playerName: playerName,
+                    inGameName: inGameName,
+                    gameUID: gameUID,
+                    idLevel: parseInt(idLevel),
+                    mobileNumber: mobileNumber,
+                    paymentStatus: paymentStatus,
+                    formFiller: formFiller,
+                    tournamentName: tournamentName,
+                    registeredAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                // Add data to Firestore.
+                await db.collection("manualRegistrations").add(playerData);
+                console.log("Document written with assigned Slot No:", assignedSlotNumber);
+                
+                // --- Redirect to Thank You Page ---
+                // IMPORTANT: Ensure thank-you.html is in the same folder as index.html
+                window.location.href = `thank-you.html?slot=${assignedSlotNumber}&player=${encodeURIComponent(playerName)}`;
+                
+            } catch (error) {
+                console.error("Error during registration process:", error);
+                let errorMessage = `रजिस्ट्रेशन के दौरान त्रुटि: ${error.message}`;
+                if (error.code === 'permission-denied') {
+                    errorMessage += "<br>अनुमति नहीं है। कृपया Firebase Security Rules जांचें: 'manualRegistrations' (read, create) के लिए।";
+                } else if (errorMessage.includes("All slots are already filled")) {
+                     errorMessage = "रजिस्ट्रेशन विफल: सभी स्लॉट भरे हुए हैं। और खिलाड़ी पंजीकृत नहीं किए जा सकते।";
+                } else if (error.message.includes("Failed to retrieve or assign a slot number")) {
+                    errorMessage = "रजिस्ट्रेशन विफल: स्लॉट नंबर प्राप्त करने में त्रुटि। कृपया पुनः प्रयास करें।";
+                }
+                displayMessage(errorMessage, 'error');
+                resetSubmitButton(); // Ensure button is re-enabled on error
+            } finally {
+                // This block is executed regardless of success/failure, ensures submit button reset on client
+            }
+        });
+
+        function resetSubmitButton() {
+            const submitBtn = document.getElementById('submitBtn');
+            const submitText = document.getElementById('submitText');
+            const submitSpinner = document.getElementById('submitSpinner');
+            submitBtn.disabled = false;
+            submitText.textContent = "Register Player";
+            submitSpinner.classList.add('d-none');
+        }
+
+        function displayMessage(message, type) {
+            const responseMessageDiv = document.getElementById('responseMessage');
+            responseMessageDiv.classList.remove('d-none', 'success-message', 'error-message-alert');
+            
+            if (type === 'success') {
+                responseMessageDiv.classList.add('success-message');
+            } else if (type === 'error') {
+                responseMessageDiv.classList.add('error-message-alert');
+            }
+            responseMessageDiv.innerHTML = message;
+        }
+    </script>
+</body>
+</html>
