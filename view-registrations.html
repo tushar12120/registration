@@ -84,7 +84,7 @@
         .badge-payment-completed { background-color: #28a745; color: white; }
         .badge-payment-pending { background-color: #ffc107; color: #343a40; }
 
-        /* Delete Button Styling */
+        /* Button Styling */
         .btn-delete {
             background-color: #dc3545; /* Red */
             border-color: #dc3545;
@@ -93,6 +93,15 @@
         .btn-delete:hover {
             background-color: #c82333;
             border-color: #bd2130;
+        }
+        .btn-edit {
+            background-color: #007bff; /* Blue */
+            border-color: #007bff;
+            color: white;
+        }
+        .btn-edit:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
         }
         .modal-header.bg-danger {
             background-color: #dc3545 !important;
@@ -204,7 +213,8 @@
                             <th>Form Filler</th>
                             <th>Tournament</th>
                             <th>Registered At</th>
-                            <th>Actions</th> </tr>
+                            <th>Actions</th> 
+                        </tr>
                     </thead>
                     <tbody id="registrationsTableBody">
                         </tbody>
@@ -232,6 +242,71 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editRegistrationModal" tabindex="-1" aria-labelledby="editRegistrationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="editRegistrationModalLabel">Edit Registration Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editRegistrationForm">
+                        <input type="hidden" id="editRegId">
+                        <div class="mb-3">
+                            <label for="editSlotNumber" class="form-label">Slot No.</label>
+                            <input type="text" class="form-control" id="editSlotNumber" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPlayerName" class="form-label">Player Name (Real Name) <span class="required-star">*</span></label>
+                            <input type="text" class="form-control" id="editPlayerName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editInGameName" class="form-label">In Game Name <span class="required-star">*</span></label>
+                            <input type="text" class="form-control" id="editInGameName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editGameUID" class="form-label">Free Fire UID <span class="required-star">*</span></label>
+                            <input type="text" class="form-control" id="editGameUID" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editIdLevel" class="form-label">ID Level <span class="required-star">*</span></label>
+                            <input type="number" class="form-control" id="editIdLevel" required min="1">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editMobileNumber" class="form-label">Mobile Number <span class="required-star">*</span></label>
+                            <input type="tel" class="form-control" id="editMobileNumber" required pattern="[0-9]{10}" title="Please enter a 10-digit mobile number">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editPaymentStatus" class="form-label">Payment Status <span class="required-star">*</span></label>
+                            <select class="form-select" id="editPaymentStatus" required>
+                                <option value="Completed">Completed</option>
+                                <option value="Pending">Pending</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editFormFiller" class="form-label">Form Filler <span class="required-star">*</span></label>
+                            <select class="form-select" id="editFormFiller" required>
+                                <option value="Tushar">Tushar</option>
+                                <option value="Swaroop">Swaroop</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editTournamentName" class="form-label">Tournament Name (Optional)</label>
+                            <input type="text" class="form-control" id="editTournamentName">
+                        </div>
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg" id="saveChangesBtn">
+                                <span id="saveChangesText">Save Changes</span>
+                                <span id="saveChangesSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            </button>
+                        </div>
+                        <div id="editResponseMessage" class="d-none mt-3"></div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -267,6 +342,7 @@
 
         // Modals
         const deleteRegistrationModal = new bootstrap.Modal(document.getElementById('deleteRegistrationModal'));
+        const editRegistrationModal = new bootstrap.Modal(document.getElementById('editRegistrationModal')); // NEW
         const passwordPromptModal = new bootstrap.Modal(document.getElementById('passwordPromptModal')); 
         
         // Elements for password prompt
@@ -274,6 +350,22 @@
         const viewPasswordError = document.getElementById('viewPasswordError');
         const confirmViewPasswordBtn = document.getElementById('confirmViewPasswordBtn');
         const mainContentContainer = document.getElementById('mainContentContainer'); 
+
+        // Elements for Edit Modal
+        const editRegId = document.getElementById('editRegId');
+        const editSlotNumber = document.getElementById('editSlotNumber');
+        const editPlayerName = document.getElementById('editPlayerName');
+        const editInGameName = document.getElementById('editInGameName');
+        const editGameUID = document.getElementById('editGameUID');
+        const editIdLevel = document.getElementById('editIdLevel');
+        const editMobileNumber = document.getElementById('editMobileNumber');
+        const editPaymentStatus = document.getElementById('editPaymentStatus');
+        const editFormFiller = document.getElementById('editFormFiller');
+        const editTournamentName = document.getElementById('editTournamentName');
+        const saveChangesBtn = document.getElementById('saveChangesBtn');
+        const saveChangesText = document.getElementById('saveChangesText');
+        const saveChangesSpinner = document.getElementById('saveChangesSpinner');
+        const editResponseMessage = document.getElementById('editResponseMessage');
 
         // Load password modal immediately when page loads
         document.addEventListener('DOMContentLoaded', () => {
@@ -326,110 +418,4 @@
         }
 
         // --- Apply Filters and Search ---
-        function applyFiltersAndSearch() {
-            const searchInput = document.getElementById('searchInput').value.trim().toLowerCase();
-            const paymentStatusFilter = document.getElementById('paymentStatusFilter').value;
-            const formFillerFilter = document.getElementById('formFillerFilter').value;
-
-            displayedRegistrations = allRegistrations.filter(reg => {
-                const matchesSearch = (reg.playerName && reg.playerName.toLowerCase().includes(searchInput)) ||
-                                      (reg.inGameName && reg.inGameName.toLowerCase().includes(searchInput)) ||
-                                      (reg.gameUID && reg.gameUID.toLowerCase().includes(searchInput)) ||
-                                      (reg.mobileNumber && reg.mobileNumber.includes(searchInput));
-
-                const matchesPaymentStatus = paymentStatusFilter === 'all' || (reg.paymentStatus === paymentStatusFilter);
-                const matchesFormFiller = formFillerFilter === 'all' || (reg.formFiller === formFillerFilter);
-
-                return matchesSearch && matchesPaymentStatus && matchesFormFiller;
-            });
-
-            renderRegistrationsTable();
-        }
-
-        // --- Render Registrations Table ---
-        function renderRegistrationsTable() {
-            const tableBody = document.getElementById('registrationsTableBody');
-            tableBody.innerHTML = ''; // Clear existing table rows
-
-            if (displayedRegistrations.length === 0) {
-                noDataMessage.classList.remove('d-none');
-                registrationTableContainer.classList.add('d-none');
-                return;
-            }
-
-            registrationTableContainer.classList.remove('d-none');
-            noDataMessage.classList.add('d-none');
-
-            displayedRegistrations.forEach(reg => {
-                const row = tableBody.insertRow();
-                row.innerHTML = `
-                    <td>${reg.slotNumber || 'N/A'}</td>
-                    <td>${reg.playerName || 'N/A'}</td>
-                    <td>${reg.inGameName || 'N/A'}</td>
-                    <td><span class="ff-uid">${reg.gameUID || 'N/A'}</span></td>
-                    <td>${reg.idLevel || 'N/A'}</td>
-                    <td>${reg.mobileNumber || 'N/A'}</td>
-                    <td><span class="badge ${reg.paymentStatus === 'Completed' ? 'badge-payment-completed' : 'badge-payment-pending'}">${reg.paymentStatus || 'N/A'}</span></td>
-                    <td>${reg.formFiller || 'N/A'}</td>
-                    <td>${reg.tournamentName || 'N/A'}</td>
-                    <td>${reg.registeredAt ? formatDate(reg.registeredAt.toDate()) : 'N/A'}</td>
-                    <td>
-                        <button class="btn btn-sm btn-danger delete-btn" 
-                                data-id="${reg.id}" 
-                                data-name="${reg.playerName || 'N/A'}"
-                                data-slot="${reg.slotNumber || 'N/A'}">
-                            <i class="bi bi-trash"></i> Delete
-                        </button>
-                    </td>
-                `;
-            });
-
-            // Add event listeners to delete buttons
-            document.querySelectorAll('.delete-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    registrationToDeleteId = e.currentTarget.dataset.id;
-                    const playerName = e.currentTarget.dataset.name;
-                    const slotNumber = e.currentTarget.dataset.slot;
-                    document.getElementById('registrationToDeleteDetails').textContent = `Slot No. ${slotNumber} - ${playerName}`;
-                    deleteRegistrationModal.show();
-                });
-            });
-        }
-
-        // --- Delete Registration Logic ---
-        document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
-            if (registrationToDeleteId) {
-                try {
-                    await db.collection("manualRegistrations").doc(registrationToDeleteId).delete();
-                    console.log("Registration successfully deleted!");
-                    deleteRegistrationModal.hide();
-                    alert("रजिस्ट्रेशन सफलतापूर्वक हटा दिया गया!");
-                    // Reload data after deletion (onSnapshot listener will also trigger)
-                    await loadRegistrations(); 
-                } catch (error) {
-                    console.error("Error deleting registration:", error);
-                    alert(`रजिस्ट्रेशन हटाने में त्रुटि: ${error.message}`);
-                }
-            }
-        });
-
-
-        // --- Event Listeners for Filters and Search ---
-        document.getElementById('searchInput').addEventListener('keyup', applyFiltersAndSearch);
-        document.getElementById('searchBtn').addEventListener('click', applyFiltersAndSearch);
-        document.getElementById('paymentStatusFilter').addEventListener('change', applyFiltersAndSearch);
-        document.getElementById('formFillerFilter').addEventListener('change', applyFiltersAndSearch);
-
-        // --- Helper Functions ---
-        function formatDate(date) {
-            if (!date) return 'N/A';
-            return date.toLocaleDateString('en-IN', {
-                year: 'numeric', month: 'short', day: 'numeric',
-                hour: '2-digit', minute: '2-digit'
-            });
-        }
-
-        // Load data on page load (triggered AFTER password confirmation)
-    </script>
-</body>
-</html>
+        func
