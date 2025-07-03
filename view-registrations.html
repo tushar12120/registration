@@ -353,8 +353,10 @@
         // Modals
         const deleteRegistrationModal = new bootstrap.Modal(document.getElementById('deleteRegistrationModal'));
         const editRegistrationModal = new bootstrap.Modal(document.getElementById('editRegistrationModal'));
-        const passwordPromptModal = new bootstrap.Modal(document.getElementById('passwordPromptModal')); 
-        
+        // Changed: Get the modal element directly for robust initialization
+        const passwordPromptModalElement = document.getElementById('passwordPromptModal');
+        let passwordPromptModal; // Declare it here, initialize later
+
         // Elements for password prompt
         const viewPasswordField = document.getElementById('viewPasswordField');
         const viewPasswordError = document.getElementById('viewPasswordError');
@@ -377,11 +379,18 @@
         const saveChangesSpinner = document.getElementById('saveChangesSpinner');
         const editResponseMessage = document.getElementById('editResponseMessage');
 
-        // Load password modal immediately when page loads
+        // Show password modal immediately when page loads
         document.addEventListener('DOMContentLoaded', () => {
-            // Log to console for debugging on mobile/desktop
             console.log("view-registrations.html loaded. Attempting to show password modal.");
-            passwordPromptModal.show();
+            // Ensure Bootstrap's JS is ready before initializing the modal
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                passwordPromptModal = new bootstrap.Modal(passwordPromptModalElement);
+                passwordPromptModal.show();
+            } else {
+                console.error("Bootstrap JS not loaded or not ready. Cannot show password modal.");
+                // Fallback or error message if Bootstrap is not available
+                alert("Error: Page components not loaded correctly. Please try refreshing or clearing browser cache.");
+            }
         });
 
         // Handle password submission from modal
@@ -399,258 +408,4 @@
             }
         });
 
-        // --- Fetch Registrations ---
-        async function loadRegistrations() {
-            const loadingMessage = document.getElementById('loadingMessage');
-            const errorMessage = document.getElementById('errorMessage');
-            const noDataMessage = document.getElementById('noDataMessage');
-            const registrationTableContainer = document.getElementById('registrationTableContainer');
-
-            loadingMessage.classList.remove('d-none');
-            errorMessage.classList.add('d-none');
-            noDataMessage.classList.add('d-none');
-            registrationTableContainer.classList.add('d-none');
-
-            try {
-                // Fetch all documents from 'manualRegistrations' collection, sorted by slot number
-                console.log("Attempting to fetch registrations from Firestore...");
-                const querySnapshot = await db.collection("manualRegistrations")
-                                                .orderBy("slotNumber", "asc")
-                                                .get();
-                allRegistrations = [];
-                querySnapshot.forEach(doc => {
-                    allRegistrations.push({ id: doc.id, ...doc.data() });
-                });
-                console.log("Registrations fetched successfully. Count:", allRegistrations.length);
-
-                applyFiltersAndSearch(); // Filter and display
-
-            } catch (error) {
-                console.error("Error loading registrations (Firebase/Firestore issue):", error);
-                errorMessage.classList.remove('d-none');
-                errorMessage.textContent = `Error loading registrations: ${error.message}. कृपया Firebase Security Rules में 'manualRegistrations' कलेक्शन के लिए 'read' अनुमति सुनिश्चित करें।`;
-            } finally {
-                loadingMessage.classList.add('d-none'); // Hide loading message regardless of success/error
-            }
-        }
-
-        // --- Apply Filters and Search ---
-        function applyFiltersAndSearch() {
-            const searchInput = document.getElementById('searchInput').value.trim().toLowerCase();
-            const paymentStatusFilter = document.getElementById('paymentStatusFilter').value;
-            const formFillerFilter = document.getElementById('formFillerFilter').value;
-
-            displayedRegistrations = allRegistrations.filter(reg => {
-                const matchesSearch = (reg.playerName && reg.playerName.toLowerCase().includes(searchInput)) ||
-                                      (reg.inGameName && reg.inGameName.toLowerCase().includes(searchInput)) ||
-                                      (reg.gameUID && reg.gameUID.toLowerCase().includes(searchInput)) ||
-                                      (reg.mobileNumber && reg.mobileNumber.includes(searchInput));
-
-                const matchesPaymentStatus = paymentStatusFilter === 'all' || (reg.paymentStatus === paymentStatusFilter);
-                const matchesFormFiller = formFillerFilter === 'all' || (reg.formFiller === formFillerFilter);
-
-                return matchesSearch && matchesPaymentStatus && matchesFormFiller;
-            });
-
-            renderRegistrationsTable();
-        }
-
-        // --- Render Registrations Table ---
-        function renderRegistrationsTable() {
-            const tableBody = document.getElementById('registrationsTableBody');
-            tableBody.innerHTML = ''; // Clear existing table rows
-
-            if (displayedRegistrations.length === 0) {
-                noDataMessage.classList.remove('d-none');
-                registrationTableContainer.classList.add('d-none');
-                return;
-            }
-
-            registrationTableContainer.classList.remove('d-none');
-            noDataMessage.classList.add('d-none');
-
-            displayedRegistrations.forEach(reg => {
-                const row = tableBody.insertRow();
-                row.innerHTML = `
-                    <td>${reg.slotNumber || 'N/A'}</td>
-                    <td>${reg.playerName || 'N/A'}</td>
-                    <td>${reg.inGameName || 'N/A'}</td>
-                    <td><span class="ff-uid">${reg.gameUID || 'N/A'}</span></td>
-                    <td>${reg.idLevel || 'N/A'}</td>
-                    <td>${reg.mobileNumber || 'N/A'}</td>
-                    <td><span class="badge ${reg.paymentStatus === 'Completed' ? 'badge-payment-completed' : 'badge-payment-pending'}">${reg.paymentStatus || 'N/A'}</span></td>
-                    <td>${reg.formFiller || 'N/A'}</td>
-                    <td>${reg.tournamentName || 'N/A'}</td>
-                    <td>${reg.registeredAt ? formatDate(reg.registeredAt.toDate()) : 'N/A'}</td>
-                    <td>
-                        <button class="btn btn-sm btn-info btn-edit me-1" 
-                                data-id="${reg.id}" 
-                                data-slot="${reg.slotNumber || ''}"
-                                data-player="${reg.playerName || ''}"
-                                data-ingame="${reg.inGameName || ''}"
-                                data-uid="${reg.gameUID || ''}"
-                                data-level="${reg.idLevel || ''}"
-                                data-mobile="${reg.mobileNumber || ''}"
-                                data-payment="${reg.paymentStatus || ''}"
-                                data-filler="${reg.formFiller || ''}"
-                                data-tournament="${reg.tournamentName || ''}">
-                            <i class="bi bi-pencil-square"></i> Edit
-                        </button>
-                        <button class="btn btn-sm btn-danger delete-btn" 
-                                data-id="${reg.id}" 
-                                data-name="${reg.playerName || 'N/A'}"
-                                data-slot="${reg.slotNumber || 'N/A'}">
-                            <i class="bi bi-trash"></i> Delete
-                        </button>
-                    </td>
-                `;
-            });
-
-            // Add event listeners to delete buttons
-            document.querySelectorAll('.delete-btn').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    registrationToDeleteId = e.currentTarget.dataset.id;
-                    const playerName = e.currentTarget.dataset.name;
-                    const slotNumber = e.currentTarget.dataset.slot;
-                    document.getElementById('registrationToDeleteDetails').textContent = `Slot No. ${slotNumber} - ${playerName}`;
-                    deleteRegistrationModal.show();
-                });
-            });
-
-            // Add event listeners to edit buttons
-            document.querySelectorAll('.btn-edit').forEach(button => {
-                button.addEventListener('click', (e) => {
-                    const data = e.currentTarget.dataset;
-                    
-                    editRegId.value = data.id;
-                    editSlotNumber.value = data.slot;
-                    editPlayerName.value = data.player;
-                    editInGameName.value = data.ingame;
-                    editGameUID.value = data.uid;
-                    editIdLevel.value = data.level;
-                    editMobileNumber.value = data.mobile;
-                    editPaymentStatus.value = data.payment;
-                    editFormFiller.value = data.filler;
-                    editTournamentName.value = data.tournament;
-
-                    editResponseMessage.classList.add('d-none'); 
-                    resetSaveChangesButton(); 
-                    editRegistrationModal.show();
-                });
-            });
-        }
-
-        // --- Delete Registration Logic ---
-        document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
-            if (registrationToDeleteId) {
-                try {
-                    await db.collection("manualRegistrations").doc(registrationToDeleteId).delete();
-                    console.log("Registration successfully deleted!");
-                    deleteRegistrationModal.hide();
-                    alert("रजिस्ट्रेशन सफलतापूर्वक हटा दिया गया!");
-                    // Data reloads automatically via onSnapshot listener in index.html (if active)
-                    // and also via loadRegistrations() here for this page.
-                    await loadRegistrations(); 
-                } catch (error) {
-                    console.error("Error deleting registration:", error);
-                    alert(`रजिस्ट्रेशन हटाने में त्रुटि: ${error.message}`);
-                }
-            }
-        });
-
-        // --- Save Changes (Edit) Logic ---
-        document.getElementById('editRegistrationForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            editResponseMessage.classList.add('d-none');
-            saveChangesBtn.disabled = true;
-            saveChangesText.textContent = "Saving...";
-            saveChangesSpinner.classList.remove('d-none');
-
-            const regId = editRegId.value;
-            const updatedData = {
-                // slotNumber should not be edited
-                playerName: editPlayerName.value.trim(),
-                inGameName: editInGameName.value.trim(),
-                gameUID: editGameUID.value.trim(),
-                idLevel: parseInt(editIdLevel.value.trim()),
-                mobileNumber: editMobileNumber.value.trim(),
-                paymentStatus: editPaymentStatus.value,
-                formFiller: editFormFiller.value,
-                tournamentName: editTournamentName.value.trim(),
-                // registeredAt field should not be updated
-            };
-
-            // Basic validation
-            if (!updatedData.playerName || !updatedData.inGameName || !updatedData.gameUID || 
-                isNaN(updatedData.idLevel) || updatedData.idLevel < 1 || 
-                !updatedData.mobileNumber || !/^[0-9]{10}$/.test(updatedData.mobileNumber) ||
-                !updatedData.paymentStatus || !updatedData.formFiller) {
-                
-                displayEditMessage("सभी आवश्यक फ़ील्ड भरें और मान्य डेटा दर्ज करें।", 'error');
-                resetSaveChangesButton();
-                return;
-            }
-
-            try {
-                await db.collection("manualRegistrations").doc(regId).update(updatedData);
-                console.log("Registration successfully updated!");
-                displayEditMessage("रजिस्ट्रेशन सफलतापूर्वक अपडेट हो गया है!", 'success');
-                
-                // Refresh the table to show updated data
-                await loadRegistrations(); 
-
-                // Close modal after a short delay
-                setTimeout(() => {
-                    editRegistrationModal.hide();
-                }, 1500);
-
-            } catch (error) {
-                console.error("Error updating registration:", error);
-                let errorMessage = `रजिस्ट्रेशन अपडेट करने में त्रुटि: ${error.message}`;
-                if (error.code === 'permission-denied') {
-                    errorMessage += "<br>अनुमति नहीं है। कृपया Firebase Security Rules जांचें: 'manualRegistrations' (update) के लिए।";
-                }
-                displayEditMessage(errorMessage, 'error');
-            } finally {
-                resetSaveChangesButton();
-            }
-        });
-
-
-        // --- Event Listeners for Filters and Search ---
-        document.getElementById('searchInput').addEventListener('keyup', applyFiltersAndSearch);
-        document.getElementById('searchBtn').addEventListener('click', applyFiltersAndSearch);
-        document.getElementById('paymentStatusFilter').addEventListener('change', applyFiltersAndSearch);
-        document.getElementById('formFillerFilter').addEventListener('change', applyFiltersAndSearch);
-
-        // --- Helper Functions ---
-        function formatDate(date) {
-            if (!date) return 'N/A';
-            return date.toLocaleDateString('en-IN', {
-                year: 'numeric', month: 'short', day: 'numeric',
-                hour: '2-digit', minute: '2-digit'
-            });
-        }
-
-        function resetSaveChangesButton() {
-            saveChangesBtn.disabled = false;
-            saveChangesText.textContent = "Save Changes";
-            saveChangesSpinner.classList.add('d-none');
-        }
-
-        function displayEditMessage(message, type) {
-            editResponseMessage.classList.remove('d-none', 'success-message', 'error-message-alert');
-            if (type === 'success') {
-                editResponseMessage.classList.add('success-message');
-            } else if (type === 'error') {
-                editResponseMessage.classList.add('error-message-alert');
-            }
-            editResponseMessage.innerHTML = message;
-        }
-
-        // Load data on page load (triggered AFTER password confirmation)
-        // document.addEventListener('DOMContentLoaded', loadRegistrations); // This is handled by password modal
-    </script>
-</body>
-</html>
+        // --- Fetch Reg
