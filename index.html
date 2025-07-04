@@ -85,7 +85,7 @@
                     <option value="">Select Filler</option>
                     <option value="Tushar">Tushar</option>
                     <option value="Swaroop">Swaroop</option>
-                </select>
+                    <option value="HIMANSHU VASU">HIMANSHU VASU</option> </select>
             </div>
 
             <div class="mb-3">
@@ -249,8 +249,7 @@
                 await db.collection("manualRegistrations").add(playerData);
                 console.log("Document written with assigned Slot No:", assignedSlotNumber);
                 
-                // --- Redirect to Thank You Page ---
-                // IMPORTANT: Ensure thank-you.html is in the same folder as index.html
+                // Redirect to Thank You Page
                 window.location.href = `thank-you.html?slot=${assignedSlotNumber}&player=${encodeURIComponent(playerName)}`;
                 
             } catch (error) {
@@ -264,7 +263,7 @@
                     errorMessage = "रजिस्ट्रेशन विफल: स्लॉट नंबर प्राप्त करने में त्रुटि। कृपया पुनः प्रयास करें।";
                 }
                 displayMessage(errorMessage, 'error');
-                resetSubmitButton(); // Ensure button is re-enabled on error
+                resetSubmitButton(); 
             } finally {
                 // This block is executed regardless of success/failure, ensures submit button reset on client
             }
