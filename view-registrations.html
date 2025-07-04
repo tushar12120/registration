@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View All Registrations</title>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
@@ -13,16 +14,18 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            padding: 20px;
+            padding: 10px; /* Reduced padding for better mobile fit */
         }
         .container {
             max-width: 1200px;
+            padding-left: 5px; /* Adjust container padding */
+            padding-right: 5px; /* Adjust container padding */
         }
         .header-section {
             background-color: #2c3e50;
             color: white;
-            padding: 40px 0;
-            margin-bottom: 30px;
+            padding: 30px 15px; /* Reduced padding */
+            margin-bottom: 20px; /* Reduced margin */
             text-align: center;
             border-radius: 8px;
         }
@@ -30,15 +33,16 @@
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            padding: 25px;
-            margin-bottom: 25px;
+            padding: 20px; /* Reduced padding */
+            margin-bottom: 20px; /* Reduced margin */
         }
         .table-responsive {
-            margin-top: 20px;
+            margin-top: 15px; /* Reduced margin */
         }
         .table th, .table td {
             vertical-align: middle;
-            font-size: 0.9rem;
+            font-size: 0.85rem; /* Slightly smaller font for table data */
+            padding: 0.5rem; /* Adjust cell padding */
         }
         .table thead th {
             background-color: #e9ecef;
@@ -49,9 +53,9 @@
             background-color: white;
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            padding: 40px;
+            padding: 30px; /* Reduced padding */
             text-align: center;
-            margin-top: 30px;
+            margin-top: 20px; /* Reduced margin */
         }
         .error-message {
             color: #dc3545;
@@ -62,17 +66,18 @@
         footer {
             background-color: #2c3e50;
             color: #ecf0f1;
-            padding: 20px 0;
+            padding: 15px 0; /* Reduced padding */
             margin-top: auto;
             text-align: center;
             border-radius: 8px;
+            font-size: 0.85rem; /* Smaller footer text */
         }
         .filter-sort-bar {
             background-color: #ffffff;
-            padding: 20px;
+            padding: 15px; /* Reduced padding */
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            margin-bottom: 25px;
+            margin-bottom: 20px; /* Reduced margin */
         }
         .ff-uid {
             font-family: monospace;
@@ -80,6 +85,7 @@
             padding: 2px 4px;
             border-radius: 3px;
             font-size: 0.85em;
+            word-break: break-all; /* Allow UID to break word in small screens */
         }
         .badge-payment-completed { background-color: #28a745; color: white; }
         .badge-payment-pending { background-color: #ffc107; color: #343a40; }
@@ -106,7 +112,7 @@
         .modal-header.bg-danger {
             background-color: #dc3545 !important;
         }
-        .modal-header.bg-primary { /* Style for password modal header */
+        .modal-header.bg-primary { 
             background-color: #0d6efd !important;
         }
         .modal-header .btn-close-white {
@@ -115,6 +121,7 @@
         /* Content hidden until password is entered */
         #mainContentContainer { 
             display: none; 
+            flex-grow: 1; /* Allow content to push footer down */
         }
         #passwordPromptMessage {
             text-align: center;
@@ -122,11 +129,48 @@
             font-size: 1.2em;
             color: #555;
         }
+        /* Ensure modals appear on top */
+        .modal {
+            z-index: 1050 !important; 
+        }
+        /* New CSS for Bootstrap JS not loaded error */
+        #bootstrapJsErrorOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95); /* Darker overlay */
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2em;
+            text-align: center;
+            z-index: 9999; /* Ensure it's on top of everything */
+            padding: 20px;
+        }
+        #bootstrapJsErrorOverlay h1 {
+            color: #dc3545; /* Red error title */
+            margin-bottom: 20px;
+        }
+        #bootstrapJsErrorOverlay p {
+            margin-bottom: 10px;
+            max-width: 80%;
+        }
+        #bootstrapJsErrorOverlay a {
+            color: #007bff;
+            text-decoration: underline;
+        }
     </style>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
     
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
         // Your Firebase Project Configuration (REPLACE WITH YOUR ACTUAL CONFIG)
         const firebaseConfig = {
@@ -143,11 +187,20 @@
         const app = firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Export/View Password (Client-side validation) - MUST MATCH THE ONE IN index.html if using same password
+        // Export/View Password (Client-side validation)
         const VIEW_REGISTRATIONS_PASSWORD = "@Efguhitk1"; 
     </script>
 </head>
 <body>
+    <div id="bootstrapJsErrorOverlay" style="display: none;">
+        <h1>त्रुटि!</h1>
+        <p>पेज ठीक से लोड नहीं हो सका।</p>
+        <p>कृपया अपना ब्राउज़र कैश साफ़ करें और पुनः प्रयास करें।</p>
+        <p>टेक्निकल डिटेल्स: बूटस्ट्रैप के महत्वपूर्ण कॉम्पोनेंट्स (जैसे मॉडाल) लोड नहीं हो सके।</p>
+        <p>यदि समस्या बनी रहती है, तो कृपया URL को कॉपी करें और किसी और ब्राउज़र (जैसे Firefox, Edge) में खोलें।</p>
+        <p>यदि समस्या जारी रहती है, तो हमें Google Chrome को अपडेट करने या किसी अन्य नेटवर्क का उपयोग करने की आवश्यकता हो सकती है।</p>
+    </div>
+
     <div id="mainContentContainer" class="container"> 
         <header class="header-section">
             <h1 class="display-5 mb-3">All Player Registrations</h1>
@@ -179,7 +232,7 @@
                         <option value="all">All Form Fillers</option>
                         <option value="Tushar">Tushar</option>
                         <option value="Swaroop">Swaroop</option>
-                    </select>
+                        <option value="HIMANSHU VASU">HIMANSHU VASU</option> </select>
                 </div>
             </div>
         </div>
@@ -293,7 +346,7 @@
                             <select class="form-select" id="editFormFiller" required>
                                 <option value="Tushar">Tushar</option>
                                 <option value="Swaroop">Swaroop</option>
-                            </select>
+                                <option value="HIMANSHU VASU">HIMANSHU VASU</option> </select>
                         </div>
                         <div class="mb-3">
                             <label for="editTournamentName" class="form-label">Tournament Name (Optional)</label>
@@ -342,8 +395,9 @@
 
         // Modals
         const deleteRegistrationModal = new bootstrap.Modal(document.getElementById('deleteRegistrationModal'));
-        const editRegistrationModal = new bootstrap.Modal(document.getElementById('editRegistrationModal')); // NEW
-        const passwordPromptModal = new bootstrap.Modal(document.getElementById('passwordPromptModal')); 
+        const editRegistrationModal = new bootstrap.Modal(document.getElementById('editRegistrationModal'));
+        const passwordPromptModalElement = document.getElementById('passwordPromptModal');
+        let passwordPromptModalInstance; // Renamed to avoid conflict with element variable
         
         // Elements for password prompt
         const viewPasswordField = document.getElementById('viewPasswordField');
@@ -367,19 +421,50 @@
         const saveChangesSpinner = document.getElementById('saveChangesSpinner');
         const editResponseMessage = document.getElementById('editResponseMessage');
 
-        // Load password modal immediately when page loads
+        // Initialize password modal immediately when page loads
         document.addEventListener('DOMContentLoaded', () => {
-            passwordPromptModal.show();
+            console.log("view-registrations.html loaded. Attempting to show password modal.");
+            // This is the CRITICAL check for Bootstrap JS loading
+            if (typeof bootstrap !== 'undefined' && typeof bootstrap.Modal === 'function') { 
+                passwordPromptModalInstance = new bootstrap.Modal(passwordPromptModalElement);
+                // Use a small timeout to ensure the modal's backdrop is fully rendered.
+                // This sometimes helps with very tricky mobile browser rendering/JS execution.
+                setTimeout(() => {
+                    passwordPromptModalInstance.show();
+                    console.log("Bootstrap Modal initialized and shown.");
+                }, 100); // 100ms delay
+            } else {
+                console.error("ERROR: Bootstrap JS (bootstrap.Modal) not loaded or not ready. Cannot show password modal interactively.");
+                // Fallback: Display an error message overlay if Bootstrap is not available
+                const errorOverlay = document.createElement('div');
+                errorOverlay.id = "bootstrapJsErrorOverlay";
+                errorOverlay.innerHTML = `
+                    <h1>त्रुटि!</h1>
+                    <p>पेज ठीक से लोड नहीं हो सका।</p>
+                    <p>कृपया अपना ब्राउज़र कैश साफ़ करें और पुनः प्रयास करें।</p>
+                    <p>टेक्निकल डिटेल्स: बूटस्ट्रैप के महत्वपूर्ण कॉम्पोनेंट्स (जैसे मॉडाल) लोड नहीं हो सके।</p>
+                    <p>यदि समस्या बनी रहती है, तो कृपया इस URL को कॉपी करें और किसी और ब्राउज़र (जैसे Firefox, Edge) में खोलें।</p>
+                    <p>यदि समस्या जारी रहती है, तो आपको अपने ब्राउज़र को अपडेट करने या किसी अन्य नेटवर्क का उपयोग करने की आवश्यकता हो सकती है।</p>
+                    <a href="https://getbootstrap.com/docs/5.3/getting-started/introduction/" target="_blank" style="color: lightblue;">बूटस्ट्रैप डॉक्यूमेंटेशन देखें</a>
+                `;
+                document.body.appendChild(errorOverlay); // Append to body
+                // Hide other page content if this happens
+                mainContentContainer.style.display = 'none';
+                console.log("Displayed Bootstrap JS load error overlay.");
+            }
         });
 
         // Handle password submission from modal
         confirmViewPasswordBtn.addEventListener('click', () => {
+            console.log("Confirm button clicked for password.");
             const enteredPassword = viewPasswordField.value;
             if (enteredPassword === VIEW_REGISTRATIONS_PASSWORD) {
-                passwordPromptModal.hide(); // Hide modal
+                console.log("Password correct. Hiding modal and showing content. Loading data...");
+                passwordPromptModalInstance.hide(); // Hide modal
                 mainContentContainer.style.display = 'block'; // Show main content
                 loadRegistrations(); // Load data after successful password
             } else {
+                console.log("Password incorrect.");
                 viewPasswordError.classList.remove('d-none'); // Show error
             }
         });
@@ -397,7 +482,7 @@
             registrationTableContainer.classList.add('d-none');
 
             try {
-                // Fetch all documents from 'manualRegistrations' collection, sorted by slot number
+                console.log("Attempting to fetch registrations from Firestore...");
                 const querySnapshot = await db.collection("manualRegistrations")
                                                 .orderBy("slotNumber", "asc")
                                                 .get();
@@ -405,15 +490,16 @@
                 querySnapshot.forEach(doc => {
                     allRegistrations.push({ id: doc.id, ...doc.data() });
                 });
+                console.log("Registrations fetched successfully. Count:", allRegistrations.length);
 
-                applyFiltersAndSearch(); // Filter and display
+                applyFiltersAndSearch(); 
 
             } catch (error) {
-                console.error("Error loading registrations:", error);
+                console.error("Error loading registrations (Firebase/Firestore issue):", error);
                 errorMessage.classList.remove('d-none');
                 errorMessage.textContent = `Error loading registrations: ${error.message}. कृपया Firebase Security Rules में 'manualRegistrations' कलेक्शन के लिए 'read' अनुमति सुनिश्चित करें।`;
             } finally {
-                loadingMessage.classList.add('d-none');
+                loadingMessage.classList.add('d-none'); 
             }
         }
 
@@ -441,7 +527,7 @@
         // --- Render Registrations Table ---
         function renderRegistrationsTable() {
             const tableBody = document.getElementById('registrationsTableBody');
-            tableBody.innerHTML = ''; // Clear existing table rows
+            tableBody.innerHTML = ''; 
 
             if (displayedRegistrations.length === 0) {
                 noDataMessage.classList.remove('d-none');
@@ -500,7 +586,7 @@
                 });
             });
 
-            // Add event listeners to edit buttons (NEW)
+            // Add event listeners to edit buttons
             document.querySelectorAll('.btn-edit').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const data = e.currentTarget.dataset;
@@ -516,8 +602,8 @@
                     editFormFiller.value = data.filler;
                     editTournamentName.value = data.tournament;
 
-                    editResponseMessage.classList.add('d-none'); // Clear previous messages
-                    resetSaveChangesButton(); // Reset button state
+                    editResponseMessage.classList.add('d-none'); 
+                    resetSaveChangesButton(); 
                     editRegistrationModal.show();
                 });
             });
@@ -531,7 +617,6 @@
                     console.log("Registration successfully deleted!");
                     deleteRegistrationModal.hide();
                     alert("रजिस्ट्रेशन सफलतापूर्वक हटा दिया गया!");
-                    // Reload data after deletion (onSnapshot listener will also trigger)
                     await loadRegistrations(); 
                 } catch (error) {
                     console.error("Error deleting registration:", error);
@@ -540,7 +625,7 @@
             }
         });
 
-        // --- Save Changes (Edit) Logic (NEW) ---
+        // --- Save Changes (Edit) Logic ---
         document.getElementById('editRegistrationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
@@ -559,7 +644,6 @@
                 paymentStatus: editPaymentStatus.value,
                 formFiller: editFormFiller.value,
                 tournamentName: editTournamentName.value.trim(),
-                // registeredAt field should not be updated, keep original
             };
 
             // Basic validation
@@ -578,10 +662,8 @@
                 console.log("Registration successfully updated!");
                 displayEditMessage("रजिस्ट्रेशन सफलतापूर्वक अपडेट हो गया है!", 'success');
                 
-                // Refresh the table to show updated data
                 await loadRegistrations(); 
 
-                // Optionally close modal after a short delay or user action
                 setTimeout(() => {
                     editRegistrationModal.hide();
                 }, 1500);
@@ -603,15 +685,23 @@
         document.getElementById('searchInput').addEventListener('keyup', applyFiltersAndSearch);
         document.getElementById('searchBtn').addEventListener('click', applyFiltersAndSearch);
         document.getElementById('paymentStatusFilter').addEventListener('change', applyFiltersAndSearch);
-        document.getElementById('formFillerFilter').addEventListener('change', applyFiltersAndSearch);
+        document.getElementById('formFillerFilter').addEventListener('change', applyFiltersAndSearch); // Changed to applyFiltersAndSearch
 
         // --- Helper Functions ---
         function formatDate(date) {
-            if (!date) return 'N/A';
-            return date.toLocaleDateString('en-IN', {
-                year: 'numeric', month: 'short', day: 'numeric',
-                hour: '2-digit', minute: '2-digit'
-            });
+            const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        function displayEditMessage(message, type) {
+            editResponseMessage.textContent = ''; // Clear previous messages
+            editResponseMessage.innerHTML = message;
+            editResponseMessage.classList.remove('d-none', 'alert-success', 'alert-danger');
+            if (type === 'success') {
+                editResponseMessage.classList.add('alert', 'alert-success');
+            } else {
+                editResponseMessage.classList.add('alert', 'alert-danger');
+            }
         }
 
         function resetSaveChangesButton() {
@@ -619,18 +709,6 @@
             saveChangesText.textContent = "Save Changes";
             saveChangesSpinner.classList.add('d-none');
         }
-
-        function displayEditMessage(message, type) {
-            editResponseMessage.classList.remove('d-none', 'success-message', 'error-message-alert');
-            if (type === 'success') {
-                editResponseMessage.classList.add('success-message');
-            } else if (type === 'error') {
-                editResponseMessage.classList.add('error-message-alert');
-            }
-            editResponseMessage.innerHTML = message;
-        }
-
-        // Load data on page load (triggered AFTER password confirmation)
     </script>
 </body>
 </html>
